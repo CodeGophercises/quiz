@@ -1,14 +1,20 @@
 package main
 
 import (
+	_ "embed"
 	"encoding/csv"
 	"flag"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 )
+
+//go:embed resources/problems.csv
+var defaultCsv string
 
 type score struct {
 	total   int
@@ -41,6 +47,7 @@ func quiz(ch chan bool, records [][]string, score *score) {
 }
 
 func main() {
+
 	// The user can give the command line flag -f to give a custom csv quiz file, if not, then use the
 	// default problems.csv file.
 	flag.Parse() // parse the flags in command line
@@ -51,24 +58,20 @@ func main() {
 		log.Fatal(err)
 	}
 	// Open the csv file
-	var file *os.File
+	var source io.Reader
 	if *quiz_file == "" {
 		//fmt.Println("Using the default problems file")
-		file, err = os.Open("resources/problems.csv")
-		if err != nil {
-			log.Fatal(err)
-		}
+		source = strings.NewReader(defaultCsv)
 	} else {
-		file, err = os.Open(*quiz_file)
+		source, err = os.Open(*quiz_file)
 		if err != nil {
 			log.Fatal(err)
 		}
 	}
-	defer file.Close()
 	//fmt.Println("Opened file", file.Name())
 
 	// Parse the csv file
-	csv_file := csv.NewReader(file)
+	csv_file := csv.NewReader(source)
 	records, err := csv_file.ReadAll()
 	if err != nil {
 		log.Fatal(err)
