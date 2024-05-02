@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"math/rand"
 	"os"
-	"strconv"
 	"strings"
 	"time"
 )
@@ -27,19 +27,21 @@ func (s *score) show() {
 
 var quiz_file = flag.String("f", "", "the quiz file")
 var timer_flag = flag.String("t", "30s", "quiz timer")
+var shuffle = flag.Bool("s", false, "Shuffle questions")
 
 func quiz(ch chan bool, records [][]string, score *score) {
 
 	for _, record := range records {
 		// A record is a slice of values in a row
 		ques, ans := record[0], record[1]
-		ans_int, _ := strconv.Atoi(ans)
+		//ans_int, _ := strconv.Atoi(ans)
 		//fmt.Println(ques, " ", ans)
 		fmt.Printf("%s : ", ques)
 		score.total += 1
-		var got int
+		var got string
 		fmt.Scanln(&got)
-		if got == ans_int {
+		got = strings.TrimSpace(got)
+		if got == ans {
 			score.correct += 1
 		}
 	}
@@ -75,6 +77,13 @@ func main() {
 	records, err := csv_file.ReadAll()
 	if err != nil {
 		log.Fatal(err)
+	}
+
+	// Shuffle if flag is enabled
+	if *shuffle == true {
+		//fmt.Println("Gotta shuffle!")
+		rand.Seed(time.Now().UnixNano())
+		rand.Shuffle(len(records), func(i, j int) { records[i], records[j] = records[j], records[i] })
 	}
 	done := make(chan bool)
 	score := score{}
